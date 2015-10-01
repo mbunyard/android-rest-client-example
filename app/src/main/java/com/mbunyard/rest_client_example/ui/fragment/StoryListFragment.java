@@ -96,7 +96,7 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
         adapter.swapCursor(null);
     }
 
-    // ---------- Internal API ----------
+    // --------------- Internal ---------------
 
     /**
      * Starts or restarts existing loader to get story data from content provider (and web service).
