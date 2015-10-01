@@ -67,10 +67,8 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    // TODO: remove test data priming method once REST client in-place.
     private void loadTestData(SQLiteDatabase db) {
-
-        //db.execSQL("INSERT INTO " + StoryContract.Story.TABLE_NAME);
-
         Log.d(TAG, "***** Inserting test data ******");
         //db.execSQL("INSERT INTO story (story_id, title, author, url permalink, thumbnail, score, published) VALUES ()");
         db.execSQL("INSERT INTO story (story_id, title) VALUES ('111222333', 'Test title 01')");
