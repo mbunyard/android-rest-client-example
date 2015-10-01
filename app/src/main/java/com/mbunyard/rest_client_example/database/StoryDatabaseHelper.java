@@ -41,7 +41,7 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
                     StoryContract.Story.THUMBNAIL + " TEXT," +
                     StoryContract.Story.SCORE + " INTEGER," +
                     StoryContract.Story.PUBLISHED + " INTEGER," +
-                    StoryContract.Story.CREATED + "INTEGER DEFAULT current_timestamp)";
+                    StoryContract.Story.CREATED + " INTEGER DEFAULT current_timestamp)";
 
     /**
      * SQL DDL statement to drop "story" table.
@@ -56,7 +56,6 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(SQL_CREATE_STORIES);
-        loadTestData(db);
     }
 
     @Override
@@ -65,13 +64,5 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
         // to simply to discard the data and start over.
         db.execSQL(SQL_DELETE_STORIES);
         onCreate(db);
-    }
-
-    // TODO: remove test data priming method once REST client in-place.
-    private void loadTestData(SQLiteDatabase db) {
-        Log.d(TAG, "***** Inserting test data ******");
-        //db.execSQL("INSERT INTO story (story_id, title, author, url permalink, thumbnail, score, published) VALUES ()");
-        db.execSQL("INSERT INTO story (story_id, title) VALUES ('111222333', 'Test title 01')");
-        db.execSQL("INSERT INTO story (story_id, title) VALUES ('444555666', 'Test title 02')");
     }
 }
