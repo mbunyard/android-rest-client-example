@@ -1,11 +1,11 @@
 package com.mbunyard.rest_client_example.ui.fragment;
 
+import android.app.Fragment;
 import android.app.LoaderManager;
 import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +16,7 @@ import com.mbunyard.rest_client_example.provider.StoryContract;
 import com.mbunyard.rest_client_example.ui.adapter.StoryCursorAdapter;
 
 /**
- * A list fragment representing a list of Stories.
+ * A list fragment representing a list of stories.
  */
 public class StoryListFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -26,11 +26,8 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
     // Adapter to expose location data to list view.
     private StoryCursorAdapter adapter;
 
+    // View to display list of stories.
     private ListView listView;
-
-    //private RecyclerView recyclerView;
-    //private RecyclerView.Adapter adapter;
-    //private RecyclerView.LayoutManager layoutManager;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the fragment
@@ -46,18 +43,13 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
 
         listView = (ListView) rootView.findViewById(R.id.story_list);
 
-        /*
-        RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.story_list);
-
-        layoutManager = new LinearLayoutManager(getActivity());
-        recyclerView.setLayoutManager(layoutManager);
-
-        // TODO: replace with real data.
-        String[] dataset = {"Story01", "Story02", "Story03", "Story04", "Story05"};
-
-        adapter = new StoryAdapter(dataset);
-        recyclerView.setAdapter(adapter);
-        */
+        // Initialize adapter and attach to listview.
+        adapter = new StoryCursorAdapter(
+                getActivity().getApplicationContext(),
+                R.layout.item_story,
+                null,
+                0);
+        listView.setAdapter(adapter);
 
         return rootView;
     }
@@ -66,9 +58,6 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
     public void onResume() {
         super.onResume();
 
-        // Initialize data adapter and fetch/load story data.
-        initStoryAdapter();
-
         // Request list of stories from content provider.
         getStories();
     }
@@ -76,13 +65,13 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         if (id == LOADER_STORIES) {
-            // Specify Story data fields to get from content provider.
+            // Specify story data fields to get from content provider.
             String[] projection = new String[]{
                     StoryContract.Story.ID_ALIAS,
                     StoryContract.Story.TITLE
             };
 
-            // Query content provide for locations
+            // Query content provider for stories.
             return new CursorLoader(
                     getActivity(),
                     StoryContract.Story.CONTENT_URI,
@@ -99,22 +88,11 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         // Swap in the new cursor. Framework will take care of closing the old cursor once method returns.
         adapter.swapCursor(cursor);
-
-        // TODO: remove after testing
-        /*
-        if (cursor != null && cursor.getCount() > 0) {
-            cursor.moveToFirst();
-
-            String id = cursor.getString(cursor.getColumnIndex(StoryContract.Story.ID));
-            String title = cursor.getString(cursor.getColumnIndex(StoryContract.Story.TITLE));
-            Log.d(TAG, "***** Story record: " + id + " - " + title);
-        }
-        */
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        // Ensure app is no longer referencing a cursor
+        // Ensure app is no longer referencing a cursor.
         adapter.swapCursor(null);
     }
 
@@ -129,14 +107,5 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
         } else {
             getLoaderManager().initLoader(LOADER_STORIES, null, this);
         }
-    }
-
-    private void initStoryAdapter() {
-        adapter = new StoryCursorAdapter(
-                getActivity().getApplicationContext(),
-                R.layout.item_story,
-                null,
-                0);
-        listView.setAdapter(adapter);
     }
 }
