@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">REST Client Example</string>
+    <string name="story_title_placeholder">Story Title Placeholders</string>
+</resources>
