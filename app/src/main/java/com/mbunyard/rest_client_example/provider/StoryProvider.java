@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -32,7 +33,7 @@ public class StoryProvider extends ContentProvider {
     /**
      * Provides access to backing database/datastore.
      */
-    private StoryDatabaseHelper mStoryDatabaseHelper;
+    private StoryDatabaseHelper storyDatabaseHelper;
 
     /**
      * Use to decode incoming URIs.
@@ -50,7 +51,7 @@ public class StoryProvider extends ContentProvider {
      */
     @Override
     public boolean onCreate() {
-        mStoryDatabaseHelper = new StoryDatabaseHelper(getContext());
+        storyDatabaseHelper = new StoryDatabaseHelper(getContext());
         return true;
     }
 
@@ -58,7 +59,7 @@ public class StoryProvider extends ContentProvider {
      * Handles requests for the MIME type of the data at the given URI.
      */
     @Override
-    public String getType(Uri uri) {
+    public String getType(@NonNull Uri uri) {
         switch (sUriMatcher.match(uri)) {
             case ROUTE_STORIES:
                 return StoryContract.Story.CONTENT_TYPE;
@@ -73,7 +74,8 @@ public class StoryProvider extends ContentProvider {
      * Handles query requests from clients.
      */
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    public Cursor query(@NonNull Uri uri, String[] projection, String selection,
+                        String[] selectionArgs, String sortOrder) {
         SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();
         Cursor cursor;
 
@@ -97,8 +99,11 @@ public class StoryProvider extends ContentProvider {
 
                 // Perform query and notify URI observers.
                 queryBuilder.setTables(StoryContract.Story.TABLE_NAME);
-                cursor = queryBuilder.query(getDatabase(), projection, selection, selectionArgs, null, null, sortOrder);
-                cursor.setNotificationUri(getContext().getContentResolver(), uri);
+                cursor = queryBuilder.query(
+                        getDatabase(), projection, selection, selectionArgs, null, null, sortOrder);
+                if (null != getContext()) {
+                    cursor.setNotificationUri(getContext().getContentResolver(), uri);
+                }
                 return cursor;
             default:
                 throw new UnsupportedOperationException("Unknown URI: " + uri);
@@ -109,7 +114,7 @@ public class StoryProvider extends ContentProvider {
      * STUB - Functionality not yet implemented.
      */
     @Override
-    public Uri insert(Uri uri, ContentValues values) {
+    public Uri insert(@NonNull Uri uri, ContentValues values) {
         return null;
     }
 
@@ -117,7 +122,7 @@ public class StoryProvider extends ContentProvider {
      * STUB - Functionality not yet implemented.
      */
     @Override
-    public int delete(Uri uri, String selection, String[] selectionArgs) {
+    public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
         return 0;
     }
 
@@ -125,7 +130,7 @@ public class StoryProvider extends ContentProvider {
      * STUB - Functionality not yet implemented.
      */
     @Override
-    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+    public int update(@NonNull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         return 0;
     }
 
@@ -133,29 +138,31 @@ public class StoryProvider extends ContentProvider {
      * Handles requests to insert a set of rows.
      */
     @Override
-    public int bulkInsert(Uri uri, ContentValues[] values) {
+    public int bulkInsert(@NonNull Uri uri, @NonNull ContentValues[] values) {
         int insertCount;
         switch (sUriMatcher.match(uri)) {
             case ROUTE_STORIES:
                 insertCount = bulkReplaceRecords(StoryContract.Story.TABLE_NAME, values);
-                Log.d(TAG, "***** number of records inserted: " + insertCount);// TODO: remove
+                Log.d(TAG, "***** number of records inserted: " + insertCount); // TODO: remove
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown URI " + uri);
         }
 
         // If rows inserted, notify registered observers that row(s) was inserted/updated.
-        if (insertCount > 0) {
+        if (insertCount > 0 && null != getContext()) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
         return insertCount;
     }
 
+    // --------------- Internal ---------------
+
     /**
      * Utility method to create and/or open database.
      */
     private SQLiteDatabase getDatabase() {
-        return mStoryDatabaseHelper.getReadableDatabase();
+        return storyDatabaseHelper.getReadableDatabase();
     }
 
     /**
