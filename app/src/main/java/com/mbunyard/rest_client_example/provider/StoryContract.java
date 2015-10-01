@@ -60,17 +60,17 @@ public class StoryContract {
         /**
          * Default story sort order.
          */
-        public static final String DEFAULT_SORT_ORDER = Story.PUBLISHED + " ASC";
+        public static final String DEFAULT_SORT_ORDER = Story._ID + " ASC";
+
+        /**
+         * Generated record ID to allow ListView/Adapter binding.
+         */
+        public static final String _ID = BaseColumns._ID;
 
         /**
          * Story ID.
          */
         public static final String ID = "story_id";
-
-        /**
-         * Story ID as an alias to allow ListView/Adapter binding.
-         */
-        public static final String ID_ALIAS = ID + " as _id";
 
         /**
          * Story title.
