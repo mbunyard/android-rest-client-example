@@ -67,7 +67,7 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
         if (id == LOADER_STORIES) {
             // Specify story data fields to get from content provider.
             String[] projection = new String[]{
-                    StoryContract.Story.ID_ALIAS,
+                    StoryContract.Story._ID,
                     StoryContract.Story.TITLE
             };
 
