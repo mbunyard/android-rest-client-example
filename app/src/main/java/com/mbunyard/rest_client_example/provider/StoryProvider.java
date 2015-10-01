@@ -12,6 +12,8 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.mbunyard.rest_client_example.database.StoryDatabaseHelper;
+import com.mbunyard.rest_client_example.rest.RedditRestAdapter;
+import com.mbunyard.rest_client_example.rest.model.StoryListingResponse;
 
 /**
  * Stories content provider. The contract between this provider and applications
@@ -80,15 +82,6 @@ public class StoryProvider extends ContentProvider {
         Cursor cursor;
 
         switch (sUriMatcher.match(uri)) {
-            case ROUTE_STORIES_ID:
-                // Query database for single story.
-                String id = uri.getLastPathSegment();
-                // TODO: evaluate better/safer method of building query where clause.
-                if (TextUtils.isEmpty(selection)) {
-                    selection = StoryContract.Story._ID + "=" + id;
-                } else {
-                    selection += " AND " + StoryContract.Story._ID + "=" + id;
-                }
             case ROUTE_STORIES:
                 // Query database for all stories.
 
@@ -97,14 +90,35 @@ public class StoryProvider extends ContentProvider {
                     sortOrder = StoryContract.Story.DEFAULT_SORT_ORDER;
                 }
 
-                // Perform query and notify URI observers.
+                // Quickly return cached data from database query, notifying URI observers.
                 queryBuilder.setTables(StoryContract.Story.TABLE_NAME);
                 cursor = queryBuilder.query(
                         getDatabase(), projection, selection, selectionArgs, null, null, sortOrder);
                 if (null != getContext()) {
                     cursor.setNotificationUri(getContext().getContentResolver(), uri);
                 }
+
+                /**
+                 * Always try to update results with the latest data from the network.
+                 *
+                 * Spawning an asynchronous load task thread, guarantees that the load has no
+                 * chance to block any content provider method, and therefore no chance to block
+                 * the UI thread.
+                 *
+                 * While the request loads, we return the cursor with existing data to the client.
+                 *
+                 * If the existing cursor is empty, the UI will render no content until it
+                 * receives URI notification.
+                 *
+                 * Content updates that arrive when the asynchronous network request completes will
+                 * appear in the already returned cursor, since that cursor query will match that of
+                 * newly arrived items.
+                 */
+                getStoriesFromNetwork();
+
                 return cursor;
+            case ROUTE_STORIES_ID:
+                // TODO: Query database for and return single story.
             default:
                 throw new UnsupportedOperationException("Unknown URI: " + uri);
         }
@@ -143,7 +157,7 @@ public class StoryProvider extends ContentProvider {
         switch (sUriMatcher.match(uri)) {
             case ROUTE_STORIES:
                 insertCount = bulkReplaceRecords(StoryContract.Story.TABLE_NAME, values);
-                Log.d(TAG, "***** number of records inserted: " + insertCount); // TODO: remove
+                Log.d(TAG, "***** # records inserted: " + insertCount); // TODO: remove
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown URI " + uri);
@@ -186,5 +200,22 @@ public class StoryProvider extends ContentProvider {
             getDatabase().endTransaction();
         }
         return recordCount;
+    }
+
+    /**
+     * Requests recent tories from Reddit and inserts/replaces records in ContentProvider/database.
+     */
+    private void getStoriesFromNetwork() {
+        try {
+            StoryListingResponse storiesResponse = RedditRestAdapter.getListingsService().listFunnyStories();
+            if (storiesResponse != null) {
+                Log.d(TAG, "***** Attempt to insert/update stories: " + storiesResponse.getData().getStories().size());
+                bulkInsert(StoryContract.Story.CONTENT_URI, storiesResponse.getStoryContentValues());
+            } else {
+                Log.d(TAG, "***** No stories returned from web service");
+            }
+        } catch (Exception e) {
+            Log.d(TAG, Log.getStackTraceString(e));
+        }
     }
 }

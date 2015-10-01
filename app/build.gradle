@@ -30,6 +30,14 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.0.1'
     compile 'com.android.support:recyclerview-v7:23.0.1'
 
+    // Square's OkHttp library
+    // http://square.github.io/okhttp
+    compile 'com.squareup.okhttp:okhttp:2.0.0'
+
+    // Square's Retrofit library
+    // http://square.github.io/retrofit/
+    compile 'com.squareup.retrofit:retrofit:1.9.0'
+
     // ------ Test Dependencies ------
 
     // JUnit
