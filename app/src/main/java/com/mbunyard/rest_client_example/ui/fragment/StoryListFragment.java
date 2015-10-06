@@ -99,7 +99,7 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
     // --------------- Internal ---------------
 
     /**
-     * Starts or restarts existing loader to get story data from content provider (and web service).
+     * Initialize or reuse existing loader to get story data from content provider (and web service).
      */
     private void getStories() {
         getLoaderManager().initLoader(LOADER_STORIES, null, this);
