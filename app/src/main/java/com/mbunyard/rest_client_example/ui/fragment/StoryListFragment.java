@@ -102,10 +102,6 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
      * Starts or restarts existing loader to get story data from content provider (and web service).
      */
     private void getStories() {
-        if (getLoaderManager().getLoader(LOADER_STORIES) != null) {
-            getLoaderManager().restartLoader(LOADER_STORIES, null, this);
-        } else {
-            getLoaderManager().initLoader(LOADER_STORIES, null, this);
-        }
+        getLoaderManager().initLoader(LOADER_STORIES, null, this);
     }
 }
