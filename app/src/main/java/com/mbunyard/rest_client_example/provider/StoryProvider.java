@@ -16,6 +16,11 @@ import com.mbunyard.rest_client_example.database.StoryDatabaseHelper;
 import com.mbunyard.rest_client_example.rest.RedditRestAdapter;
 import com.mbunyard.rest_client_example.rest.model.StoryListingResponse;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -127,7 +132,9 @@ public class StoryProvider extends ContentProvider {
                 //getStoriesFromNetworkMainThread();
 
                 // TODO: remove - make network request on background thread.
-                getStoriesFromNetworkBackgroundThread();
+                if (isNetworkRequestAllowed(StoryContract.Story.TABLE_NAME, StoryContract.Story.CREATED)) {
+                    getStoriesFromNetworkBackgroundThread();
+                }
 
                 // TODO: *****************************************
                 // TODO: leverage timestamp gate b4 making request
@@ -313,5 +320,63 @@ public class StoryProvider extends ContentProvider {
             }
         }
         return rowID;
+    }
+
+    /**
+     * Determines if another network request should be completed based on the age of the most recent
+     * latest cached record.
+     * @param tableName         database table name to query for most recent cache date
+     * @param cacheDateColumn   database date column to use in determining cache age
+     * @return                  true if cache is old enough to allow a new network request, false otherwise
+     */
+    private boolean isNetworkRequestAllowed(String tableName, String cacheDateColumn) {
+        final long ALLOWED_REQUEST_AGE = 2;  // Seconds
+        Cursor cursor = null;
+        boolean isRequestAllowed = true;
+
+        try {
+            // Query database for single most recent update date/time to use as a reference point
+            // for determining when last cache update was completed.
+            String mostRecentUpdateDate = null;
+            cursor = getDatabase().query(
+                    tableName,
+                    new String[]{cacheDateColumn},
+                    null, null, null, null,
+                    cacheDateColumn + " DESC",
+                    "1");
+            while (cursor.moveToNext()) {
+                mostRecentUpdateDate = cursor.getString(cursor.getColumnIndex(cacheDateColumn));
+            }
+            cursor.close();
+
+            // Determine if mostRecentUpdate is older than ALLOWED_REQUEST_AGE and another
+            // network request/cache refresh can be started.
+            if (!TextUtils.isEmpty(mostRecentUpdateDate)) {
+                try {
+                    final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    Date lastUpdateDate = format.parse(mostRecentUpdateDate);
+                    Date currentDate = format.parse(format.format(new Date()));
+                    long timeDiff = currentDate.getTime() - lastUpdateDate.getTime();
+                    /*
+                    Log.d(TAG, "***** lastUpdateDate: " + lastUpdateDate
+                    + " | currentDate: " + currentDate + " | diff - ms: " + timeDiff
+                    + " | sec: " + (timeDiff / 1000) + " | min: " + (timeDiff / 1000 / 60));
+                    */
+
+                    if ((timeDiff / 1000) < ALLOWED_REQUEST_AGE) {
+                        isRequestAllowed = false;
+                    }
+                } catch (ParseException e) {
+                    Log.e(TAG, "Date Format/Parse Exception", e);
+                }
+            }
+        }
+        finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return isRequestAllowed;
     }
 }
