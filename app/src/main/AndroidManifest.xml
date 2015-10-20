@@ -27,5 +27,10 @@
             android:authorities="com.mbunyard.rest_client_example"
             android:exported="false"/>
 
+        <!-- Services -->
+        <service
+            android:name=".service.NetworkService"
+            android:exported="false"/>
+
     </application>
 </manifest>
