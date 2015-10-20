@@ -35,8 +35,13 @@ dependencies {
     compile 'com.squareup.okhttp:okhttp:2.0.0'
 
     // Square's Retrofit library
-    // http://square.github.io/retrofit/
+    // http://square.github.io/retrofit
     compile 'com.squareup.retrofit:retrofit:1.9.0'
+
+    // Greenrobot's EventBus library
+    // http://greenrobot.github.io/EventBus
+    //compile 'de.greenrobot:eventbus:2.2.0'
+    compile 'de.greenrobot:eventbus:2.4.0'
 
     // ------ Test Dependencies ------
 

@@ -7,9 +7,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.mbunyard.rest_client_example.event.Event;
 import com.mbunyard.rest_client_example.provider.StoryContract;
 import com.mbunyard.rest_client_example.rest.RedditRestAdapter;
 import com.mbunyard.rest_client_example.rest.model.StoryListingResponse;
+
+import de.greenrobot.event.EventBus;
 
 public class NetworkService extends IntentService {
 
@@ -52,6 +55,9 @@ public class NetworkService extends IntentService {
             Log.d(TAG, Log.getStackTraceString(e));
         } finally {
             contentProviderTest = null;
+
+            // Inform UI/main thread that query is complete
+            EventBus.getDefault().post(new Event.QueryCompleteEvent());
         }
     }
 }

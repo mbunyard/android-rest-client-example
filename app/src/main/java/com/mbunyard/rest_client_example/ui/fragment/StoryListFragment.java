@@ -6,20 +6,27 @@ import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.mbunyard.rest_client_example.R;
+import com.mbunyard.rest_client_example.event.Event;
 import com.mbunyard.rest_client_example.provider.StoryContract;
 import com.mbunyard.rest_client_example.ui.adapter.StoryCursorAdapter;
+
+import de.greenrobot.event.EventBus;
 
 /**
  * A list fragment representing a list of stories.
  */
-public class StoryListFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class StoryListFragment extends Fragment implements
+        LoaderManager.LoaderCallbacks<Cursor>,
+        SwipeRefreshLayout.OnRefreshListener {
 
     private static final String TAG = StoryListFragment.class.getSimpleName();
     private static final int LOADER_STORIES = 1;
@@ -29,6 +36,9 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
 
     // View to display list of stories.
     private ListView listView;
+
+    // Refresh indicator view.
+    SwipeRefreshLayout swipeRefreshLayout;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the fragment
@@ -44,6 +54,8 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
         View rootView = inflater.inflate(R.layout.fragment_story_list, container, false);
 
         listView = (ListView) rootView.findViewById(R.id.story_list);
+        swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_to_refresh);
+        swipeRefreshLayout.setOnRefreshListener(this);
 
         // Initialize adapter and attach to listview.
         adapter = new StoryCursorAdapter(
@@ -59,10 +71,22 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "***** onResume()");
+
+        // Register fragment as event bus subscriber.
+        Log.d(TAG, "***** onResume() - register for event");
+        EventBus.getDefault().register(this);
 
         // Request list of stories from content provider.
-        getStories();
+        getStories(false);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        // Unregister fragment as event bus subscriber.
+        Log.d(TAG, "***** onPause() - unregister for event");
+        EventBus.getDefault().unregister(this);
     }
 
     @Override
@@ -102,13 +126,48 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
         adapter.swapCursor(null);
     }
 
+    @Override
+    public void onRefresh() {
+        Log.d(TAG, "***** onRefresh().loadStories()");
+        getStories(true);
+    }
+
+    /**
+     * Event bus event handler.
+     */
+    public void onEventMainThread(Object event) {
+        if (event instanceof Event.QueryCompleteEvent) {
+            // Stop pull-to-refresh UI indicator if displayed
+            Log.d(TAG, "***** onEventMainThread() - instance of Event.QueryCompleteEvent");
+            if (swipeRefreshLayout.isRefreshing()) {
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        } else if (event instanceof Event.QueryServiceError) {
+            Toast.makeText(getActivity().getApplicationContext(),
+                    "Example service/network error", Toast.LENGTH_LONG).show();
+        } else {
+            // TODO: remove else
+            Log.d(TAG, "***** onEventMainThread() - no matching event");
+        }
+    }
+
     // --------------- Internal ---------------
 
     /**
      * Initialize or reuse existing loader to get story data from content provider (and web service).
      */
-    private void getStories() {
-        Log.d(TAG, "***** getStories() - initLoader");
-        getLoaderManager().initLoader(LOADER_STORIES, null, this);
+    private void getStories(boolean updateCache) {
+        if (updateCache) {
+            if (getLoaderManager().getLoader(LOADER_STORIES) != null) {
+                Log.d(TAG, "***** loadStories() - update cache - restart loader");
+                getLoaderManager().restartLoader(LOADER_STORIES, null, this);
+            } else {
+                Log.d(TAG, "***** loadStories() - update cache - init loader");
+                getLoaderManager().initLoader(LOADER_STORIES, null, this);
+            }
+        } else {
+            Log.d(TAG, "***** loadStories() - !update cache - init loader");
+            getLoaderManager().initLoader(LOADER_STORIES, null, this);
+        }
     }
 }
