@@ -6,6 +6,7 @@ import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,6 +40,7 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.d(TAG, "***** onCreateView()");
         View rootView = inflater.inflate(R.layout.fragment_story_list, container, false);
 
         listView = (ListView) rootView.findViewById(R.id.story_list);
@@ -57,6 +59,7 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
     @Override
     public void onResume() {
         super.onResume();
+        Log.d(TAG, "***** onResume()");
 
         // Request list of stories from content provider.
         getStories();
@@ -65,6 +68,7 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         if (id == LOADER_STORIES) {
+            Log.d(TAG, "***** onCreateLoader()");
             // Specify story data fields to get from content provider.
             String[] projection = new String[]{
                     StoryContract.Story._ID,
@@ -86,12 +90,14 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        Log.d(TAG, "***** onLoadFinished()");
         // Swap in the new cursor. Framework will take care of closing the old cursor once method returns.
         adapter.swapCursor(cursor);
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
+        Log.d(TAG, "***** onLoaderReset()");
         // Ensure app is no longer referencing a cursor.
         adapter.swapCursor(null);
     }
@@ -102,6 +108,7 @@ public class StoryListFragment extends Fragment implements LoaderManager.LoaderC
      * Initialize or reuse existing loader to get story data from content provider (and web service).
      */
     private void getStories() {
+        Log.d(TAG, "***** getStories() - initLoader");
         getLoaderManager().initLoader(LOADER_STORIES, null, this);
     }
 }
