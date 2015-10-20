@@ -15,6 +15,7 @@ import android.util.Log;
 import com.mbunyard.rest_client_example.database.StoryDatabaseHelper;
 import com.mbunyard.rest_client_example.rest.RedditRestAdapter;
 import com.mbunyard.rest_client_example.rest.model.StoryListingResponse;
+import com.mbunyard.rest_client_example.service.NetworkService;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -127,21 +128,17 @@ public class StoryProvider extends ContentProvider {
                  * appear in the already returned cursor, since that cursor query will match that of
                  * newly arrived items.
                  */
-
-                // TODO: remove - make network request on main thread.
-                //getStoriesFromNetworkMainThread();
-
-                // TODO: remove - make network request on background thread.
                 if (isNetworkRequestAllowed(StoryContract.Story.TABLE_NAME, StoryContract.Story.CREATED)) {
-                    getStoriesFromNetworkBackgroundThread();
+
+                    // TODO: remove - make network request on main thread.
+                    //getStoriesFromNetworkMainThread();
+
+                    // TODO: remove - make network request on background thread.
+                    //getStoriesFromNetworkBackgroundThread();
+
+                    // Leverage IntentService to make network request on background thread.
+                    NetworkService.getStories(getContext(), this);
                 }
-
-                // TODO: *****************************************
-                // TODO: leverage timestamp gate b4 making request
-                // TODO: *****************************************
-
-                // Leverage IntentService to make network request on background thread.
-                //NetworkService.getStories(getContext());
 
                 return cursor;
             case ROUTE_STORIES_ID:
@@ -156,9 +153,6 @@ public class StoryProvider extends ContentProvider {
     public Uri insert(@NonNull Uri uri, ContentValues values) {
         switch (sUriMatcher.match(uri)) {
             case ROUTE_STORIES:
-
-                // TODO: investigate db.insertWithOnConflict(blah, blah, blah, SQLiteDatabase.CONFLICT_REPLACE)
-
                 Log.d(TAG, "***** insert() called");
 
                 // Insert the values into a new database row
@@ -168,10 +162,8 @@ public class StoryProvider extends ContentProvider {
                 if (rowID == null) {
                     // TODO: REMOVE
                     Log.d(TAG, "***** story (" + storyId + ") does not exist - insert");
-
-                    //long time = System.currentTimeMillis();
-                    //values.put(StoryContract.Story.CREATED, time);
                     long rowId = getDatabase().insert(StoryContract.Story.TABLE_NAME, null, values);
+                    // TODO: investigate db.insertWithOnConflict(blah, blah, blah, SQLiteDatabase.CONFLICT_REPLACE)
                     Log.d(TAG, "***** inserted into DB rowId: " + rowId + " | storyId: " + values.getAsString(StoryContract.Story.ID));
                     if (rowId >= 0) {
                         Uri insertUri = ContentUris.withAppendedId(StoryContract.Story.CONTENT_URI, rowId);
@@ -279,7 +271,7 @@ public class StoryProvider extends ContentProvider {
                 Log.d(TAG, "***** http response returned - attempt to insert/update stories: " + storyListingResponse.getData().getStories().size());
 
                 // TODO - review : bulk insert/replace stories.
-                //bulkInsert(StoryContract.Story.CONTENT_URI, storyListingResponse.getStoryContentValues());
+                // bulkInsert(StoryContract.Story.CONTENT_URI, storyListingResponse.getStoryContentValues());
 
                 // Attempt to insert stories one-by-one.
                 for (ContentValues contentValues : storyListingResponse.getStoryContentValues()) {
