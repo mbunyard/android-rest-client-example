@@ -41,7 +41,7 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
                     StoryContract.Story.THUMBNAIL + " TEXT," +
                     StoryContract.Story.SCORE + " INTEGER," +
                     StoryContract.Story.PUBLISHED + " INTEGER," +
-                    StoryContract.Story.CREATED + " INTEGER DEFAULT current_timestamp)";
+                    StoryContract.Story.CREATED + " DATE DEFAULT (datetime('now','localtime')))";
 
     /**
      * SQL DDL statement to drop "story" table.
