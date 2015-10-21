@@ -11,3 +11,6 @@
 .navigation
 /build
 /captures
+
+# Project
+non-build
