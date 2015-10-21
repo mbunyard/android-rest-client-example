@@ -24,40 +24,37 @@ public class NetworkService extends IntentService {
     }
 
     public static void getStories(Context context, ContentProvider contentProvider) {
-        Log.d(TAG, "***** getStories()");
         contentProviderTest = contentProvider;
         context.startService(new Intent(context, NetworkService.class));
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        // TODO: remove.
-        String intentData = intent.getDataString();
-        Log.d(TAG, "***** onHandleIntent - received intent: " + intent + " | intentData: " + intentData);
-
-        // TODO: make network request.
         try {
+            // Make HTTP request on current, intent service background thread, to obtain stories.
             StoryListingResponse storiesResponse = RedditRestAdapter.getListingsService().getStories();
             if (storiesResponse != null) {
-                Log.d(TAG, "***** Attempt to insert/update stories: " + storiesResponse.getData().getStories().size());
-
-                // TODO - review : bulk insert/replace stories.
-                //getContentResolver().bulkInsert(StoryContract.Story.CONTENT_URI, storiesResponse.getStoryContentValues());
+                // Attempt to bulk insert stories.
+                //contentProviderTest.bulkInsert(
+                //        StoryContract.Story.CONTENT_URI, storiesResponse.getStoryContentValues());
 
                 // Attempt to insert stories one-by-one.
                 for (ContentValues contentValues : storiesResponse.getStoryContentValues()) {
                     contentProviderTest.insert(StoryContract.Story.CONTENT_URI, contentValues);
                 }
-            } else {
-                Log.d(TAG, "***** No stories returned from web service");
+
+                // Inform UI/main thread that query is complete.
+                EventBus.getDefault().post(new Event.QueryCompleteEvent());
             }
         } catch (Exception e) {
             Log.d(TAG, Log.getStackTraceString(e));
+
+            // Inform UI/main thread that query is complete and there was an error.
+            EventBus.getDefault().post(new Event.QueryCompleteEvent());
+            EventBus.getDefault().post(new Event.QueryServiceError(
+                    "unable to complete network request"));
         } finally {
             contentProviderTest = null;
-
-            // Inform UI/main thread that query is complete
-            EventBus.getDefault().post(new Event.QueryCompleteEvent());
         }
     }
 }

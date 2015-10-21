@@ -50,7 +50,6 @@ public class StoryListFragment extends Fragment implements
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.d(TAG, "***** onCreateView()");
         View rootView = inflater.inflate(R.layout.fragment_story_list, container, false);
 
         listView = (ListView) rootView.findViewById(R.id.story_list);
@@ -73,10 +72,9 @@ public class StoryListFragment extends Fragment implements
         super.onResume();
 
         // Register fragment as event bus subscriber.
-        Log.d(TAG, "***** onResume() - register for event");
         EventBus.getDefault().register(this);
 
-        // Request list of stories from content provider.
+        // Get stories from content provider.
         getStories(false);
     }
 
@@ -85,14 +83,12 @@ public class StoryListFragment extends Fragment implements
         super.onPause();
 
         // Unregister fragment as event bus subscriber.
-        Log.d(TAG, "***** onPause() - unregister for event");
         EventBus.getDefault().unregister(this);
     }
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         if (id == LOADER_STORIES) {
-            Log.d(TAG, "***** onCreateLoader()");
             // Specify story data fields to get from content provider.
             String[] projection = new String[]{
                     StoryContract.Story._ID,
@@ -114,21 +110,22 @@ public class StoryListFragment extends Fragment implements
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        Log.d(TAG, "***** onLoadFinished()");
-        // Swap in the new cursor. Framework will take care of closing the old cursor once method returns.
+        // Swap in new cursor. Framework will take care of closing the old cursor once method returns.
         adapter.swapCursor(cursor);
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        Log.d(TAG, "***** onLoaderReset()");
         // Ensure app is no longer referencing a cursor.
         adapter.swapCursor(null);
     }
 
+    /**
+     * SwipeRefresh callback.
+     */
     @Override
     public void onRefresh() {
-        Log.d(TAG, "***** onRefresh().loadStories()");
+        // Get stories from content provider.
         getStories(true);
     }
 
@@ -137,17 +134,17 @@ public class StoryListFragment extends Fragment implements
      */
     public void onEventMainThread(Object event) {
         if (event instanceof Event.QueryCompleteEvent) {
-            // Stop pull-to-refresh UI indicator if displayed
-            Log.d(TAG, "***** onEventMainThread() - instance of Event.QueryCompleteEvent");
+            // Stop pull-to-refresh UI indicator if displayed.
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
             }
         } else if (event instanceof Event.QueryServiceError) {
+            // TODO: swap toast with snackbar.
+            /*
             Toast.makeText(getActivity().getApplicationContext(),
-                    "Example service/network error", Toast.LENGTH_LONG).show();
-        } else {
-            // TODO: remove else
-            Log.d(TAG, "***** onEventMainThread() - no matching event");
+                    "Error: " + ((Event.QueryServiceError) event).getMessage(),
+                    Toast.LENGTH_LONG).show();
+            */
         }
     }
 
@@ -159,14 +156,11 @@ public class StoryListFragment extends Fragment implements
     private void getStories(boolean updateCache) {
         if (updateCache) {
             if (getLoaderManager().getLoader(LOADER_STORIES) != null) {
-                Log.d(TAG, "***** loadStories() - update cache - restart loader");
                 getLoaderManager().restartLoader(LOADER_STORIES, null, this);
             } else {
-                Log.d(TAG, "***** loadStories() - update cache - init loader");
                 getLoaderManager().initLoader(LOADER_STORIES, null, this);
             }
         } else {
-            Log.d(TAG, "***** loadStories() - !update cache - init loader");
             getLoaderManager().initLoader(LOADER_STORIES, null, this);
         }
     }

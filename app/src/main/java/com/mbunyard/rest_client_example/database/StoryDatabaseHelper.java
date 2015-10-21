@@ -3,7 +3,6 @@ package com.mbunyard.rest_client_example.database;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 
 import com.mbunyard.rest_client_example.provider.StoryContract;
 

@@ -66,7 +66,6 @@ public class StoryProvider extends ContentProvider {
      */
     @Override
     public boolean onCreate() {
-        Log.d(TAG, "***** onCreate()");
         storyDatabaseHelper = new StoryDatabaseHelper(getContext());
         return true;
     }
@@ -76,7 +75,6 @@ public class StoryProvider extends ContentProvider {
      */
     @Override
     public String getType(@NonNull Uri uri) {
-        Log.d(TAG, "***** getType()");
         switch (sUriMatcher.match(uri)) {
             case ROUTE_STORIES:
                 return StoryContract.Story.CONTENT_TYPE;
@@ -98,7 +96,6 @@ public class StoryProvider extends ContentProvider {
 
         switch (sUriMatcher.match(uri)) {
             case ROUTE_STORIES:
-                Log.d(TAG, "***** query() - stories");
                 // Query database for all stories.
 
                 // If no sort order specified/passed, use the default.
@@ -132,17 +129,14 @@ public class StoryProvider extends ContentProvider {
                  */
                 if (isNetworkRequestAllowed(StoryContract.Story.TABLE_NAME, StoryContract.Story.CREATED)) {
 
-                    // TODO: remove - make network request on main thread.
-                    //getStoriesFromNetworkMainThread();
+                    // Use Retrofit to make request on background thread.
+                    //getStoriesFromNetwork();
 
-                    // TODO: remove - make network request on background thread.
-                    //getStoriesFromNetworkBackgroundThread();
-
-                    // Leverage IntentService to make network request on background thread.
+                    // Use IntentService to make network request on background thread.
                     NetworkService.getStories(getContext(), this);
                 }
-
                 return cursor;
+
             case ROUTE_STORIES_ID:
                 // TODO: Query database for and return single story.
 
@@ -155,29 +149,18 @@ public class StoryProvider extends ContentProvider {
     public Uri insert(@NonNull Uri uri, ContentValues values) {
         switch (sUriMatcher.match(uri)) {
             case ROUTE_STORIES:
-                Log.d(TAG, "***** insert() called");
-
-                // Insert the values into a new database row
+                // Determine if record already exists and if not, insert new record.
                 String storyId = (String) values.get(StoryContract.Story.ID);
-
                 Long rowID = storyExists(storyId);
                 if (rowID == null) {
-                    // TODO: REMOVE
-                    Log.d(TAG, "***** story (" + storyId + ") does not exist - insert");
                     long rowId = getDatabase().insert(StoryContract.Story.TABLE_NAME, null, values);
-                    // TODO: investigate db.insertWithOnConflict(blah, blah, blah, SQLiteDatabase.CONFLICT_REPLACE)
-                    Log.d(TAG, "***** inserted into DB rowId: " + rowId + " | storyId: " + values.getAsString(StoryContract.Story.ID));
                     if (rowId >= 0) {
                         Uri insertUri = ContentUris.withAppendedId(StoryContract.Story.CONTENT_URI, rowId);
-                        Log.d(TAG, "***** contentResolver.notifyChange: " + insertUri);
                         getContext().getContentResolver().notifyChange(insertUri, null);
                         return insertUri;
                     }
-
                     throw new IllegalStateException("Could not insert content values: " + values);
                 }
-
-                Log.d(TAG, "***** no insert - storyId: " + storyId + " | rowId: " + rowID + " | return uri: " + ContentUris.withAppendedId(StoryContract.Story.CONTENT_URI, rowID));
                 return ContentUris.withAppendedId(StoryContract.Story.CONTENT_URI, rowID);
 
             default:
@@ -209,14 +192,14 @@ public class StoryProvider extends ContentProvider {
         int insertCount;
         switch (sUriMatcher.match(uri)) {
             case ROUTE_STORIES:
+                // TODO: swap replace for insert.
                 insertCount = bulkReplaceRecords(StoryContract.Story.TABLE_NAME, values);
-                Log.d(TAG, "***** # records inserted: " + insertCount); // TODO: remove
                 break;
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);
         }
 
-        // If rows inserted, notify registered observers that row(s) was inserted/updated.
+        // If rows inserted, notify registered observers.
         if (insertCount > 0 && null != getContext()) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
@@ -264,29 +247,30 @@ public class StoryProvider extends ContentProvider {
     /**
      * Requests recent stories from network and inserts/replaces records in ContentProvider/database.
      */
-    private void getStoriesFromNetworkBackgroundThread() {
-        Log.d(TAG, "***** getStoriesFromNetworkBackgroundThread");
-
+    private void getStoriesFromNetwork() {
         RedditRestAdapter.getListingsService().getStories(new Callback<StoryListingResponse>() {
             @Override
             public void success(StoryListingResponse storyListingResponse, Response response) {
-                Log.d(TAG, "***** http response returned - attempt to insert/update stories: " + storyListingResponse.getData().getStories().size());
-
-                // TODO - review : bulk insert/replace stories.
-                // bulkInsert(StoryContract.Story.CONTENT_URI, storyListingResponse.getStoryContentValues());
+                // Attempt to bulk insert stories.
+                //bulkInsert(
+                //        StoryContract.Story.CONTENT_URI, storyListingResponse.getStoryContentValues());
 
                 // Attempt to insert stories one-by-one.
                 for (ContentValues contentValues : storyListingResponse.getStoryContentValues()) {
                     insert(StoryContract.Story.CONTENT_URI, contentValues);
                 }
 
-                // Inform UI/main thread that query is complete
+                // Inform UI/main thread that query is complete.
                 EventBus.getDefault().post(new Event.QueryCompleteEvent());
             }
 
             @Override
             public void failure(RetrofitError error) {
-                Log.d(TAG, "***** No stories returned from web service");
+                Log.e(TAG, "Error in network request: " + error.getMessage());
+
+                // Inform UI/main thread that query is complete and there was an error.
+                EventBus.getDefault().post(new Event.QueryCompleteEvent());
+                EventBus.getDefault().post(new Event.QueryServiceError(error.getMessage()));
             }
         });
     }
@@ -294,8 +278,8 @@ public class StoryProvider extends ContentProvider {
     /**
      * Determines if a given story ID already exists within the database.
      *
-     * @param storyId network story ID
-     * @return the internal story ID if story already exists, null otherwise
+     * @param storyId   network story ID
+     * @return          the internal story ID if story already exists, null otherwise
      */
     private Long storyExists(String storyId) {
         Cursor cursor = null;
@@ -309,7 +293,6 @@ public class StoryProvider extends ContentProvider {
                     null, null, null);
             if (cursor.moveToFirst()) {
                 rowID = cursor.getLong(cursor.getColumnIndex(StoryContract.Story._ID));
-                Log.d(TAG, "***** storyExists() - rowId: " + rowID + " | storyId: " + storyId);
             }
         } finally {
             if (cursor != null) {
@@ -359,7 +342,6 @@ public class StoryProvider extends ContentProvider {
                     + " | currentDate: " + currentDate + " | diff - ms: " + timeDiff
                     + " | sec: " + (timeDiff / 1000) + " | min: " + (timeDiff / 1000 / 60));
                     */
-
                     if ((timeDiff / 1000) < ALLOWED_REQUEST_AGE) {
                         isRequestAllowed = false;
                     }
