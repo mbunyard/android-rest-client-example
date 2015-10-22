@@ -12,21 +12,24 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.mbunyard.rest_client_example.NetworkUtil;
 import com.mbunyard.rest_client_example.database.StoryDatabaseHelper;
 import com.mbunyard.rest_client_example.event.Event;
 import com.mbunyard.rest_client_example.rest.RedditRestAdapter;
 import com.mbunyard.rest_client_example.rest.model.StoryListingResponse;
 import com.mbunyard.rest_client_example.service.NetworkService;
 
+import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import de.greenrobot.event.EventBus;
+import retrofit.Call;
 import retrofit.Callback;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
+import retrofit.Response;
+import retrofit.Retrofit;
 
 /**
  * Stories content provider. The contract between this provider and applications
@@ -245,32 +248,53 @@ public class StoryProvider extends ContentProvider {
     }
 
     /**
-     * Requests recent stories from network and inserts/replaces records in ContentProvider/database.
+     * Requests recent stories from network (on background thread)
+     * and inserts/replaces records in ContentProvider/database.
      */
     private void getStoriesFromNetwork() {
-        RedditRestAdapter.getListingsService().getStories(new Callback<StoryListingResponse>() {
+        Call<StoryListingResponse> call = RedditRestAdapter.getListingsService().getStories();
+        call.enqueue(new Callback<StoryListingResponse>() {
             @Override
-            public void success(StoryListingResponse storyListingResponse, Response response) {
-                // Attempt to bulk insert stories.
-                //bulkInsert(
-                //        StoryContract.Story.CONTENT_URI, storyListingResponse.getStoryContentValues());
+            public void onResponse(Response<StoryListingResponse> response, Retrofit retrofit) {
+                if (response.isSuccess()) {     // response code is 2xx
+                    StoryListingResponse storyList = response.body();
 
-                // Attempt to insert stories one-by-one.
-                for (ContentValues contentValues : storyListingResponse.getStoryContentValues()) {
-                    insert(StoryContract.Story.CONTENT_URI, contentValues);
+                    // Attempt to bulk insert stories.
+                    //bulkInsert(
+                    //        StoryContract.Story.CONTENT_URI, storyListingResponse.getStoryContentValues());
+
+                    // Attempt to insert stories one-by-one.
+                    for (ContentValues contentValues : storyList.getStoryContentValues()) {
+                        insert(StoryContract.Story.CONTENT_URI, contentValues);
+                    }
+
+                    // Inform UI/main thread that query is complete.
+                    EventBus.getDefault().post(new Event.QueryCompleteEvent());
+                } else {
+                    // Handle request errors.
+                    //int statusCode = response.code();
+                    //ResponseBody errorBody = response.errorBody();
+
+                    // Inform UI/main thread that query is complete and there was an error.
+                    EventBus.getDefault().post(new Event.QueryCompleteEvent());
+                    EventBus.getDefault().post(new Event.QueryServiceError(
+                            "Network request error: " + response.code() + " - " + response.message()));
                 }
-
-                // Inform UI/main thread that query is complete.
-                EventBus.getDefault().post(new Event.QueryCompleteEvent());
             }
 
             @Override
-            public void failure(RetrofitError error) {
-                Log.e(TAG, "Error in network request: " + error.getMessage());
+            public void onFailure(Throwable throwable) {
+                Log.e(TAG, throwable.toString());
 
                 // Inform UI/main thread that query is complete and there was an error.
                 EventBus.getDefault().post(new Event.QueryCompleteEvent());
-                EventBus.getDefault().post(new Event.QueryServiceError(error.getMessage()));
+                if (throwable instanceof UnknownHostException
+                        && !NetworkUtil.isNetworkAvailableAndConnected(getContext())) {
+                    EventBus.getDefault().post(new Event.NoConnectivityEvent());
+                } else {
+                    EventBus.getDefault().post(new Event.QueryServiceError(
+                            "Network request error: " + throwable.getMessage()));
+                }
             }
         });
     }
@@ -305,6 +329,7 @@ public class StoryProvider extends ContentProvider {
     /**
      * Determines if another network request should be completed based on the age of the most recent
      * latest cached record.
+     *
      * @param tableName         database table name to query for most recent cache date
      * @param cacheDateColumn   database date column to use in determining cache age
      * @return                  true if cache is old enough to allow a new network request, false otherwise

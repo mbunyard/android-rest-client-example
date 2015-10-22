@@ -2,7 +2,8 @@ package com.mbunyard.rest_client_example.rest;
 
 import com.mbunyard.rest_client_example.rest.service.ListingsService;
 
-import retrofit.RestAdapter;
+import retrofit.GsonConverterFactory;
+import retrofit.Retrofit;
 
 /**
  * Provides interface for efficient use of Retrofit library and defined reddit web services.
@@ -17,14 +18,15 @@ public class RedditRestAdapter {
     /**
      * Create single Retrofit RestAdapter instance for efficient reuse.
      */
-    private static final RestAdapter REST_ADAPTER = new RestAdapter.Builder()
-            .setEndpoint(ENDPOINT_URL)
+    private static final Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl(ENDPOINT_URL)
+            .addConverterFactory(GsonConverterFactory.create())
             .build();
 
     /**
      * Create single ListingsService instance for efficient reuse.
      */
-    private static final ListingsService LISTINGS_SERVICE = REST_ADAPTER.create(ListingsService.class);
+    private static final ListingsService LISTINGS_SERVICE = retrofit.create(ListingsService.class);
 
     /**
      * Private constructor to prevent external instantiation.

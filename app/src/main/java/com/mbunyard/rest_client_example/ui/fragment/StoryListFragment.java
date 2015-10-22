@@ -138,13 +138,16 @@ public class StoryListFragment extends Fragment implements
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
             }
+        } else if (event instanceof Event.NoConnectivityEvent) {
+            // TODO: swap toast with snackbar.
+            Toast.makeText(getActivity().getApplicationContext(),
+                    "No connection",
+                    Toast.LENGTH_LONG).show();
         } else if (event instanceof Event.QueryServiceError) {
             // TODO: swap toast with snackbar.
-            /*
             Toast.makeText(getActivity().getApplicationContext(),
-                    "Error: " + ((Event.QueryServiceError) event).getMessage(),
+                    ((Event.QueryServiceError) event).getMessage(),
                     Toast.LENGTH_LONG).show();
-            */
         }
     }
 

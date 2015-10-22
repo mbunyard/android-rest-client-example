@@ -13,6 +13,11 @@ public class Event {
     public static class QueryCompleteEvent {}
 
     /**
+     * Event indicating no network connectivity.
+     */
+    public static class NoConnectivityEvent {}
+
+    /**
      * Event indicating network query/request resulted in error.
      */
     public static class QueryServiceError {
