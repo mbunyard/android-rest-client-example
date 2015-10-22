@@ -132,7 +132,6 @@ public class StoryProvider extends ContentProvider {
                  * newly arrived items.
                  */
                 if (isNetworkRequestAllowed(StoryContract.Story.TABLE_NAME, StoryContract.Story.CREATED)) {
-
                     // Use Retrofit to make request on background thread.
                     //getStoriesFromNetwork();
 
