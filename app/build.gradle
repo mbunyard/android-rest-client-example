@@ -26,7 +26,9 @@ dependencies {
     // Android Support library
     // https://developer.android.com/tools/support-library/index.html
     // https://developer.android.com/tools/support-library/features.html#v7
+    // http://developer.android.com/tools/support-library/features.html#design
     compile 'com.android.support:appcompat-v7:23.1.0'
+    compile 'com.android.support:design:23.1.0'
 
     // Square's Retrofit library
     // http://square.github.io/retrofit

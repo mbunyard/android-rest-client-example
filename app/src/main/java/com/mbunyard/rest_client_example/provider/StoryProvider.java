@@ -13,6 +13,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.mbunyard.rest_client_example.NetworkUtil;
+import com.mbunyard.rest_client_example.R;
 import com.mbunyard.rest_client_example.database.StoryDatabaseHelper;
 import com.mbunyard.rest_client_example.event.Event;
 import com.mbunyard.rest_client_example.rest.RedditRestAdapter;
@@ -278,7 +279,8 @@ public class StoryProvider extends ContentProvider {
                     // Inform UI/main thread that query is complete and there was an error.
                     EventBus.getDefault().post(new Event.QueryCompleteEvent());
                     EventBus.getDefault().post(new Event.QueryServiceError(
-                            "Network request error: " + response.code() + " - " + response.message()));
+                            getContext().getString(R.string.request_error) + " | "
+                                    + response.code() + " - " + response.message()));
                 }
             }
 
@@ -293,7 +295,7 @@ public class StoryProvider extends ContentProvider {
                     EventBus.getDefault().post(new Event.NoConnectivityEvent());
                 } else {
                     EventBus.getDefault().post(new Event.QueryServiceError(
-                            "Network request error: " + throwable.getMessage()));
+                            getContext().getString(R.string.request_error)));    // e.getMessage()}
                 }
             }
         });

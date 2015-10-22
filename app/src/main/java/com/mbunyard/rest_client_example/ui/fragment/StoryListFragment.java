@@ -6,13 +6,12 @@ import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.mbunyard.rest_client_example.R;
 import com.mbunyard.rest_client_example.event.Event;
@@ -139,15 +138,19 @@ public class StoryListFragment extends Fragment implements
                 swipeRefreshLayout.setRefreshing(false);
             }
         } else if (event instanceof Event.NoConnectivityEvent) {
-            // TODO: swap toast with snackbar.
-            Toast.makeText(getActivity().getApplicationContext(),
-                    "No connection",
-                    Toast.LENGTH_LONG).show();
+            Snackbar.make(swipeRefreshLayout, R.string.no_connection, Snackbar.LENGTH_LONG)
+                    .setAction(R.string.retry, new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            getStories(true);
+                        }
+                    })
+                    .setActionTextColor(getResources().getColor(R.color.marigold))
+                    .show();
         } else if (event instanceof Event.QueryServiceError) {
-            // TODO: swap toast with snackbar.
-            Toast.makeText(getActivity().getApplicationContext(),
-                    ((Event.QueryServiceError) event).getMessage(),
-                    Toast.LENGTH_LONG).show();
+            Snackbar.make(swipeRefreshLayout,
+                    ((Event.QueryServiceError) event).getMessage(), Snackbar.LENGTH_LONG)
+                    .show();
         }
     }
 

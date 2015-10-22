@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">REST Client Example</string>
     <string name="story_title_placeholder">Story Title Placeholders</string>
+
+    <!-- Network request messages -->
+    <string name="no_connection">No connection</string>
+    <string name="retry">Retry</string>
+    <string name="request_error">Network request error</string>
 </resources>

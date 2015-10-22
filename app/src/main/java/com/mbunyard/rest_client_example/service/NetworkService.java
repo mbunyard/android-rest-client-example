@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.util.Log;
 
 import com.mbunyard.rest_client_example.NetworkUtil;
+import com.mbunyard.rest_client_example.R;
 import com.mbunyard.rest_client_example.event.Event;
 import com.mbunyard.rest_client_example.provider.StoryContract;
 import com.mbunyard.rest_client_example.rest.RedditRestAdapter;
@@ -58,7 +59,8 @@ public class NetworkService extends IntentService {
                 // Inform UI/main thread that query is complete and there was an error.
                 EventBus.getDefault().post(new Event.QueryCompleteEvent());
                 EventBus.getDefault().post(new Event.QueryServiceError(
-                        "Network request error: " + response.code() + " - " + response.message()));
+                        getString(R.string.request_error) + " | "
+                                + response.code() + " - " + response.message()));
             }
         } catch (Exception e) {
             Log.e(TAG, e.toString());
@@ -70,7 +72,7 @@ public class NetworkService extends IntentService {
                 EventBus.getDefault().post(new Event.NoConnectivityEvent());
             } else {
                 EventBus.getDefault().post(new Event.QueryServiceError(
-                        "Network request error: " + e.getMessage()));
+                        getString(R.string.request_error)));    // e.getMessage()}
             }
         } finally {
             contentProvider = null;
