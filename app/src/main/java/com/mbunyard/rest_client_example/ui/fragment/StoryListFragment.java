@@ -14,11 +14,8 @@ import android.view.ViewGroup;
 import android.widget.ListView;
 
 import com.mbunyard.rest_client_example.R;
-import com.mbunyard.rest_client_example.event.Event;
 import com.mbunyard.rest_client_example.provider.StoryContract;
 import com.mbunyard.rest_client_example.ui.adapter.StoryCursorAdapter;
-
-import de.greenrobot.event.EventBus;
 
 /**
  * A list fragment representing a list of stories.
@@ -70,9 +67,6 @@ public class StoryListFragment extends Fragment implements
     public void onResume() {
         super.onResume();
 
-        // Register fragment as event bus subscriber.
-        EventBus.getDefault().register(this);
-
         // Get stories from content provider.
         getStories(false);
     }
@@ -80,9 +74,6 @@ public class StoryListFragment extends Fragment implements
     @Override
     public void onPause() {
         super.onPause();
-
-        // Unregister fragment as event bus subscriber.
-        EventBus.getDefault().unregister(this);
     }
 
     @Override
@@ -126,32 +117,6 @@ public class StoryListFragment extends Fragment implements
     public void onRefresh() {
         // Get stories from content provider.
         getStories(true);
-    }
-
-    /**
-     * Event bus event handler.
-     */
-    public void onEventMainThread(Object event) {
-        if (event instanceof Event.QueryCompleteEvent) {
-            // Stop pull-to-refresh UI indicator if displayed.
-            if (swipeRefreshLayout.isRefreshing()) {
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        } else if (event instanceof Event.NoConnectivityEvent) {
-            Snackbar.make(swipeRefreshLayout, R.string.no_connection, Snackbar.LENGTH_LONG)
-                    .setAction(R.string.retry, new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            getStories(true);
-                        }
-                    })
-                    .setActionTextColor(getResources().getColor(R.color.marigold))
-                    .show();
-        } else if (event instanceof Event.QueryServiceError) {
-            Snackbar.make(swipeRefreshLayout,
-                    ((Event.QueryServiceError) event).getMessage(), Snackbar.LENGTH_LONG)
-                    .show();
-        }
     }
 
     // --------------- Internal ---------------
