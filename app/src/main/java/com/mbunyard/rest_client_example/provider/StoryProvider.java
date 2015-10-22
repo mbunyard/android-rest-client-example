@@ -15,6 +15,7 @@ import android.util.Log;
 import com.mbunyard.rest_client_example.NetworkUtil;
 import com.mbunyard.rest_client_example.R;
 import com.mbunyard.rest_client_example.database.StoryDatabaseHelper;
+import com.mbunyard.rest_client_example.event.Event;
 import com.mbunyard.rest_client_example.rest.RedditRestAdapter;
 import com.mbunyard.rest_client_example.rest.model.StoryListingResponse;
 import com.mbunyard.rest_client_example.service.NetworkService;
@@ -25,6 +26,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import de.greenrobot.event.EventBus;
 import retrofit.Call;
 import retrofit.Callback;
 import retrofit.Response;
@@ -265,16 +267,35 @@ public class StoryProvider extends ContentProvider {
                     for (ContentValues contentValues : storyList.getStoryContentValues()) {
                         insert(StoryContract.Story.CONTENT_URI, contentValues);
                     }
+
+                    // Inform UI/main thread that query is complete.
+                    EventBus.getDefault().post(new Event.QueryCompleteEvent());
                 } else {
                     // Handle request errors.
                     //int statusCode = response.code();
                     //ResponseBody errorBody = response.errorBody();
+
+                    // Inform UI/main thread that query is complete and there was an error.
+                    EventBus.getDefault().post(new Event.QueryCompleteEvent());
+                    EventBus.getDefault().post(new Event.QueryServiceError(
+                            getContext().getString(R.string.request_error) + " | "
+                                    + response.code() + " - " + response.message()));
                 }
             }
 
             @Override
             public void onFailure(Throwable throwable) {
                 Log.e(TAG, throwable.toString());
+
+                // Inform UI/main thread that query is complete and there was an error.
+                EventBus.getDefault().post(new Event.QueryCompleteEvent());
+                if (throwable instanceof UnknownHostException
+                        && !NetworkUtil.isNetworkAvailableAndConnected(getContext())) {
+                    EventBus.getDefault().post(new Event.NoConnectivityEvent());
+                } else {
+                    EventBus.getDefault().post(new Event.QueryServiceError(
+                            getContext().getString(R.string.request_error)));    // e.getMessage()}
+                }
             }
         });
     }

@@ -35,6 +35,10 @@ dependencies {
     compile 'com.squareup.retrofit:retrofit:2.0.0-beta2'
     compile 'com.squareup.retrofit:converter-gson:2.0.0-beta2'
 
+    // greenrobot's EventBus library
+    // https://github.com/greenrobot/EventBus
+    compile 'de.greenrobot:eventbus:2.4.0'
+
     // ------ Test Dependencies ------
 
     // JUnit
