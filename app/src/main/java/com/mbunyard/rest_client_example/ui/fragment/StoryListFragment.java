@@ -52,7 +52,7 @@ public class StoryListFragment extends Fragment implements
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_story_list, container, false);
 
-        listView = (ListView) rootView.findViewById(R.id.story_list);
+        listView = (ListView) rootView.findViewById(R.id.list);
         swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_to_refresh);
         swipeRefreshLayout.setOnRefreshListener(this);
 
